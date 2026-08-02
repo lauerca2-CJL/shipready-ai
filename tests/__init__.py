@@ -1,1 +1,1 @@
-"""Test package for ReviewBoard AI."""
+"""Test package for ShipReady AI."""

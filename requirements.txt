@@ -1,4 +1,4 @@
-# Runtime dependencies for ReviewBoard AI.
+# Runtime dependencies for ShipReady AI.
 #
 # Kept minimal for the scaffolding increment; version floors are set to
 # reasonably current releases as of writing and should be bumped deliberately.

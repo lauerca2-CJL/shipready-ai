@@ -24,3 +24,7 @@ htmlcov/
 .vscode/
 .idea/
 .DS_Store
+
+# Pipeline output artifacts (keep the folder, ignore its generated contents)
+generated/*
+!generated/.gitkeep

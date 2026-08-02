@@ -1,7 +1,7 @@
-# Streamlit configuration for ReviewBoard AI.
+# Streamlit configuration for ShipReady AI.
 #
 # Left mostly commented-out for this scaffolding increment. Theming and
-# server options should be tuned once the UI (reviewboard/ui/) is built.
+# server options should be tuned once the UI (shipready_ai/ui/) is built.
 
 [theme]
 # primaryColor = "#1F6FEB"

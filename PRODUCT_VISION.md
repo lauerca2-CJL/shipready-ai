@@ -1,4 +1,4 @@
-# Product Vision — ReviewBoard AI
+# Product Vision — ShipReady AI
 
 ## Problem
 
@@ -18,7 +18,7 @@ practice this process is:
 
 ## Vision
 
-ReviewBoard AI simulates this review board using orchestrated AI agents,
+ShipReady AI simulates this review board using orchestrated AI agents,
 each standing in for one specialist role. The goal is not to replace human
 judgment on high-stakes releases, but to demonstrate that a **well-designed
 multi-agent orchestration** — with strict single-responsibility boundaries
