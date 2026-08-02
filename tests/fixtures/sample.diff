@@ -1,0 +1,5 @@
+# Placeholder fixture.
+#
+# This file will eventually contain a small, realistic unified git diff
+# used to exercise the review pipeline in tests (e.g. a diff that touches
+# an API handler, so every reviewer persona has something relevant to say).

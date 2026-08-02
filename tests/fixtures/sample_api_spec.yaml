@@ -1,0 +1,5 @@
+# Placeholder fixture.
+#
+# Will eventually contain a small OpenAPI spec fragment corresponding to
+# the endpoint touched by tests/fixtures/sample.diff, used to test the
+# optional API-spec path through the pipeline.

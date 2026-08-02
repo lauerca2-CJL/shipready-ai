@@ -1,0 +1,13 @@
+# Streamlit configuration for ReviewBoard AI.
+#
+# Left mostly commented-out for this scaffolding increment. Theming and
+# server options should be tuned once the UI (reviewboard/ui/) is built.
+
+[theme]
+# primaryColor = "#1F6FEB"
+# backgroundColor = "#FFFFFF"
+# secondaryBackgroundColor = "#F5F7FA"
+# textColor = "#0D1117"
+
+[server]
+# headless = true

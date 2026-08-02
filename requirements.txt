@@ -1,0 +1,19 @@
+# Runtime dependencies for ReviewBoard AI.
+#
+# Kept minimal for the scaffolding increment; version floors are set to
+# reasonably current releases as of writing and should be bumped deliberately.
+
+# UI framework
+streamlit>=1.38
+
+# Orchestrates the specialized reviewer agents
+cursor-sdk>=0.1
+
+# Structured data contracts between reviewers and the Release Manager
+pydantic>=2.7
+
+# Loads CURSOR_API_KEY and other settings from a local .env file
+python-dotenv>=1.0
+
+# Parsing optional OpenAPI/API specification uploads
+PyYAML>=6.0
