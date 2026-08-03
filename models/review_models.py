@@ -65,9 +65,22 @@ class ReleaseDecision(BaseModel):
     """
     The CAB reviewer's synthesis of all four ReviewResults into a final
     release decision. Consumed by the dashboard.
+
+    `cab_decision`/`overall_risk`/`executive_summary`/`reviewer_summary`/
+    `business_impact`/`final_recommendation` were added in Sprint 9 to
+    support the same enterprise-report-style presentation the Architecture
+    reviewer got in Sprint 8. Optional with empty/None defaults, so nothing
+    that reads the legacy `decision`/`rationale` fields (there was no other
+    reader — confirmed before adding these) is affected.
     """
 
     decision: Literal["ship", "ship_with_conditions", "hold"] = "ship"
     rationale: str
     conditions: List[str] = Field(default_factory=list)
     contributing_reviews: List[ReviewResult] = Field(default_factory=list)
+    cab_decision: Optional[Literal["APPROVE", "NEEDS_CHANGES", "BLOCK"]] = None
+    overall_risk: Optional[Literal["LOW", "MEDIUM", "HIGH", "CRITICAL"]] = None
+    executive_summary: Optional[str] = None
+    reviewer_summary: List[str] = Field(default_factory=list)
+    business_impact: Optional[str] = None
+    final_recommendation: Optional[str] = None
