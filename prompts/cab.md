@@ -41,10 +41,13 @@ before or after it — matching exactly this shape:
 {
   "decision": "APPROVE" | "NEEDS_CHANGES" | "BLOCK",
   "overall_risk": "LOW" | "MEDIUM" | "HIGH" | "CRITICAL",
-  "executive_summary": "a short, plain-language paragraph a non-technical stakeholder could read to understand the release readiness",
-  "business_impact": "what shipping this change means for users/the business if it goes out as-is, given the reviewers' findings",
-  "final_recommendation": "the concrete final call — ship, ship with specific conditions, or hold — and why"
+  "executive_summary": "a short, plain-language paragraph (50 words MAXIMUM) a non-technical stakeholder could read to understand the release readiness",
+  "business_impact": "what shipping this change means for users/the business if it goes out as-is, given the reviewers' findings (40 words MAXIMUM)",
+  "final_recommendation": "the concrete final call — ship, ship with specific conditions, or hold. At most 3 short bullet points, each on its own line (separate points with a newline character)."
 }
+
+Be concise everywhere above — this is an executive report, not a detailed
+writeup. Every word limit is a hard maximum, not a target to reach.
 
 Guidance on "decision":
 - "APPROVE" — every reviewer is satisfied enough that this can ship as-is.

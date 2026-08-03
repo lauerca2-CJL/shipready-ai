@@ -42,6 +42,24 @@ final_recommendation. See prompts/cab.md.
 review() still always returns a valid ReleaseDecision (never raises) — same
 last-line-of-defense reasoning as reviewers/architecture.py, since
 orchestrator/pipeline.py has no try/except around this call either.
+
+Sprint 10 note: presentation-only polish of _render_report_markdown() and
+its two helpers — the JSON contract requested from the model (decision/
+overall_risk/executive_summary/business_impact/final_recommendation), the
+SDK call, and the isolation rules above are all unchanged. The decision is
+now a large emoji heading (the primary visual element) instead of a small
+inline badge; the executive summary/business impact are word-capped
+(_truncate_words()) at render time so the display stays terse even if the
+model ignores the prompt's word limits — the full, untruncated text is
+still kept on ReleaseDecision.executive_summary/.business_impact as the
+structured source of truth, same "ask AND enforce" pattern already used
+for CAB's diff-isolation. final_recommendation is split into at most 3
+bullets (_split_recommendation_bullets()) without changing its underlying
+type (still a single string field/JSON value — only how it's rendered
+changed). The reviewer summary lines are now a compact one-liner per
+reviewer (icon + name + colored decision, "(Placeholder)" for the three
+reviewers with no `decision` field populated yet) instead of a bullet with
+that reviewer's full assessment paragraph.
 """
 
 import json
@@ -63,12 +81,23 @@ _PROMPT_TEMPLATE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
 _LEADING_HTML_COMMENT = re.compile(r"^\s*<!--.*?-->\s*", re.DOTALL)
 
 _CAB_DECISION_COLORS = {"APPROVE": "green", "NEEDS_CHANGES": "orange", "BLOCK": "red"}
+_CAB_DECISION_EMOJI = {"APPROVE": "\U0001f7e2", "NEEDS_CHANGES": "\U0001f7e0", "BLOCK": "\U0001f534"}
 _RISK_COLORS = {"LOW": "green", "MEDIUM": "blue", "HIGH": "orange", "CRITICAL": "red"}
 _REVIEWER_DECISION_COLORS = {"PASS": "green", "NEEDS_CHANGES": "orange", "BLOCK": "red"}
 _CAB_DECISION_TO_LEGACY = {"APPROVE": "ship", "NEEDS_CHANGES": "ship_with_conditions", "BLOCK": "hold"}
 # For reviewers still on a hardcoded verdict (no `decision` field populated
 # yet) — security.py/qa.py/operations.py as of this sprint.
 _VERDICT_TO_DECISION_LABEL = {"approve": "PASS", "approve_with_comments": "NEEDS_CHANGES", "block": "BLOCK"}
+# Same icons as ui/components.py's STATUS_CARDS — duplicated rather than
+# imported (reviewers never depend on ui/, ARCHITECTURE.md's layering rule).
+_REVIEWER_EMOJI = {"Architecture": "\U0001f3d7\ufe0f", "Security": "\U0001f512", "QA": "\U0001f9ea", "Operations": "\u2699\ufe0f"}
+
+# Sprint 10: hard word/bullet caps applied at render time, regardless of
+# whether the model honored the (also updated) prompt's own limits — see
+# module docstring's "ask AND enforce" note.
+_EXECUTIVE_SUMMARY_MAX_WORDS = 50
+_BUSINESS_IMPACT_MAX_WORDS = 40
+_FINAL_RECOMMENDATION_MAX_BULLETS = 3
 
 
 def _load_persona_prompt() -> str:
@@ -83,6 +112,35 @@ def _reviewer_decision_label(result: ReviewResult) -> str:
 
 def _reviewer_assessment(result: ReviewResult) -> str:
     return result.overall_assessment or result.summary
+
+
+def _is_placeholder_reviewer(result: ReviewResult) -> bool:
+    """True for reviewers with no real SDK integration yet (security.py/qa.py/operations.py, as of this sprint)."""
+    return result.decision is None
+
+
+def _truncate_words(text: str, max_words: int) -> str:
+    """Hard word cap for the report's display copy — see module docstring."""
+    words = text.split()
+    if len(words) <= max_words:
+        return text
+    return " ".join(words[:max_words]).rstrip(".,;:") + "\u2026"
+
+
+def _split_recommendation_bullets(text: str, max_bullets: int = _FINAL_RECOMMENDATION_MAX_BULLETS) -> List[str]:
+    """
+    Split final_recommendation into at most `max_bullets` short bullets.
+
+    Prefers newline-separated points (what the updated prompts/cab.md asks
+    the model for). Falls back to a sentence-ish split of a single
+    paragraph so older/plain responses — the model ignored the prompt, or
+    this is a pre-Sprint-10 ReleaseDecision — still render as a sensible
+    (if shorter) bulleted list instead of one long line.
+    """
+    parts = [p.strip(" -\u2022") for p in text.split("\n") if p.strip()]
+    if len(parts) <= 1:
+        parts = [p.strip() for p in re.split(r"(?<=[.!?])\s+", text.strip()) if p.strip()]
+    return parts[:max_bullets] if parts else [text.strip()]
 
 
 def _build_prompt(review_results: List[ReviewResult]) -> str:
@@ -100,12 +158,21 @@ def _build_prompt(review_results: List[ReviewResult]) -> str:
 
 
 def _build_reviewer_summary_lines(review_results: List[ReviewResult]) -> List[str]:
-    """The deterministic "Reviewer Summary" section — see module docstring."""
+    """
+    The deterministic "Reviewer Summary" section — see module docstring.
+
+    Sprint 10: one compact line per reviewer (icon + name + colored
+    decision, "(Placeholder)" tag when applicable) — no more full
+    assessment paragraphs; those are still available to a human via that
+    reviewer's own status card, so repeating them here just added noise.
+    """
     lines = []
     for result in review_results:
         label = _reviewer_decision_label(result)
         color = _REVIEWER_DECISION_COLORS.get(label, "gray")
-        lines.append(f"- **{result.reviewer_name}** — :{color}[{label.replace('_', ' ')}] — {_reviewer_assessment(result)}")
+        icon = _REVIEWER_EMOJI.get(result.reviewer_name, "\u2022")
+        placeholder_tag = " _(Placeholder)_" if _is_placeholder_reviewer(result) else ""
+        lines.append(f"{icon} **{result.reviewer_name}** — :{color}[{label.replace('_', ' ')}]{placeholder_tag}")
     return lines
 
 
@@ -118,24 +185,35 @@ def _render_report_markdown(
     final_recommendation: str,
 ) -> str:
     """
-    Render the CAB's structured output as one markdown report, in the same
-    style as reviewers/architecture.py's _render_report_markdown() (Sprint
-    8) — decision/risk badge line, then ### headed sections with bullets.
+    Render the CAB's structured output as one markdown report.
+
+    Sprint 10: the decision is now the primary visual element — a large
+    emoji heading, with Overall Risk directly below it — rather than a
+    small inline badge line; the other sections keep the same ### headed
+    style used elsewhere (reviewers/architecture.py, Sprint 8) but each is
+    tightened for an executive-report read: word-capped summaries, a
+    compact reviewer list, and a short bulleted final recommendation. See
+    module docstring for what's enforced here vs. asked of the model.
     """
-    decision_color = _CAB_DECISION_COLORS.get(cab_decision, "gray")
+    decision_emoji = _CAB_DECISION_EMOJI.get(cab_decision, "\u26aa")
     risk_color = _RISK_COLORS.get(overall_risk, "gray")
 
     lines = [
-        f"**Decision:** :{decision_color}[{cab_decision.replace('_', ' ')}]"
-        f"  \u00b7  **Overall Risk:** :{risk_color}[{overall_risk or 'n/a'}]",
+        f"## {decision_emoji} {cab_decision.replace('_', ' ')}",
+        f"**Overall Risk:** :{risk_color}[{overall_risk or 'n/a'}]",
         "",
         "### Executive Summary",
-        executive_summary,
+        _truncate_words(executive_summary, _EXECUTIVE_SUMMARY_MAX_WORDS),
         "",
         "### Reviewer Summary",
     ]
     lines += reviewer_lines if reviewer_lines else ["- No reviewer input available."]
-    lines += ["", "### Business Impact", business_impact, "", "### Final Recommendation", final_recommendation]
+
+    lines += ["", "### Business Impact", _truncate_words(business_impact, _BUSINESS_IMPACT_MAX_WORDS)]
+
+    lines += ["", "### Final Recommendation"]
+    lines += [f"- {bullet}" for bullet in _split_recommendation_bullets(final_recommendation)]
+
     return "\n".join(lines)
 
 
