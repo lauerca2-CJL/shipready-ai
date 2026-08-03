@@ -59,14 +59,15 @@ STATUS_CARDS = [
     },
 ]
 
-# Sprint 11: which reviewers' expanders start open. Architecture and CAB are
-# the two reviewers with real, structured findings worth seeing immediately;
-# Security/QA/Operations are still one-line placeholders, so collapsed by
-# default keeps the initial view focused rather than showing three
-# expanders with nothing substantial in them yet.
+# Sprint 11: which reviewers' expanders start open. Architecture, Security,
+# and CAB are the reviewers with real, structured findings worth seeing
+# immediately (Security became real in Sprint 12); QA/Operations are still
+# one-line placeholders, so collapsed by default keeps the initial view
+# focused rather than showing expanders with nothing substantial in them
+# yet.
 _DEFAULT_EXPANDED = {
     "Architecture": True,
-    "Security": False,
+    "Security": True,
     "QA": False,
     "Operations": False,
     "Change Advisory Board": True,
