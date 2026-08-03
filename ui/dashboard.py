@@ -17,14 +17,15 @@ Sprint 4 note: clicking "Run Review" now builds a real SubmissionInput from
 the uploaded diff/PR files (reading their raw bytes as text) and passes it
 into orchestrator.pipeline.run_review_pipeline(), which runs the four
 diff-reviewers and the CAB reviewer in order and yields after each one so
-this module can flip that reviewer's status card from "Pending" to
-"Complete" in place. Every reviewer's review() body is still a hardcoded
-placeholder — no Cursor SDK or LLM call happens anywhere in this flow yet;
-the pipeline now simply has real input to (eventually) act on.
+this module can flip that reviewer's section from "Pending" to "Complete"
+in place.
 
-Planned (future sprint):
-    - Replace each reviewer's placeholder review() with a real Cursor SDK
-      call.
+Sprint 11 note: the orchestrator now yields each step's real
+`ReviewResult`/`ReleaseDecision` object (was a pre-rendered summary
+string) — this module keeps those objects in session state (keyed by
+reviewer name) instead of a plain status string, so ui/components.py's
+expander titles can show a decision badge. No reviewer/orchestrator logic
+changed; this is purely which data this module hangs on to for display.
 """
 
 from typing import Optional
@@ -35,15 +36,14 @@ from models.review_models import SubmissionInput
 from orchestrator.pipeline import run_review_pipeline
 from ui.components import (
     STATUS_CARDS,
+    decision_badge,
     inject_compact_styles,
     render_header,
     render_input_section,
+    render_review_board,
+    render_reviewer_section,
     render_run_button,
-    render_status_board,
-    render_status_card,
 )
-
-_PENDING_STATUSES = {card["name"]: "Pending" for card in STATUS_CARDS}
 
 
 def _read_uploaded_text(uploaded_file: Optional[object]) -> str:
@@ -77,36 +77,38 @@ def render_dashboard() -> None:
     diff_file, pr_file = render_input_section()
     run_clicked = render_run_button()
 
-    if "review_statuses" not in st.session_state:
-        st.session_state.review_statuses = dict(_PENDING_STATUSES)
+    if "review_results" not in st.session_state:
+        st.session_state.review_results = {}
 
     if run_clicked:
         # Reset to Pending before drawing the board below, so re-running
         # the pipeline visibly restarts the animation instead of appearing
-        # to skip straight to "Complete" for cards left over from a
+        # to skip straight to "Complete" for sections left over from a
         # previous run.
-        st.session_state.review_statuses = dict(_PENDING_STATUSES)
+        st.session_state.review_results = {}
 
     # Render the board exactly once per script run. Its placeholders are
     # then updated in place by the loop below, rather than re-rendering a
-    # second board — that would stack a duplicate grid on the page.
-    placeholders = render_status_board(st.session_state.review_statuses)
+    # second board — that would stack a duplicate set of sections on the page.
+    placeholders = render_review_board(st.session_state.review_results)
 
     if run_clicked:
         submission = _build_submission(diff_file, pr_file)
         card_by_name = {card["name"]: card for card in STATUS_CARDS}
-        final_summary = ""
+        final_result = None
 
-        for name, summary in run_review_pipeline(submission):
-            st.session_state.review_statuses[name] = "Complete"
+        for name, result_obj in run_review_pipeline(submission):
+            st.session_state.review_results[name] = result_obj
             card = card_by_name[name]
-            render_status_card(
+            render_reviewer_section(
                 card["icon"],
                 card["name"],
                 "Complete",
-                summary,
+                card["description"],
+                result_obj,
                 placeholder=placeholders[name],
             )
-            final_summary = summary
+            final_result = result_obj
 
-        st.success(f"Review complete — CAB decision: {final_summary}")
+        badge = decision_badge(final_result) or "n/a"
+        st.success(f"Review complete — CAB decision: {badge}")
