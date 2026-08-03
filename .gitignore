@@ -10,9 +10,9 @@ dist/
 .venv/
 venv/
 env/
-# Separate Python 3.10+ env for the Cursor SDK verification script
-# (cursor-sdk requires 3.10+; the rest of the project targets 3.9.6).
-.venv-sdk/
+# Local Python 3.12 interpreter install (see DEVELOPMENT_CONTEXT.md, Sprint 7,
+# for how .venv depends on this if you don't already have Python 3.12 installed).
+.python312/
 
 # Environment / secrets
 .env

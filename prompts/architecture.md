@@ -7,10 +7,11 @@ Responsibility of this file:
     separate from orchestration code, so prompt engineering can be authored
     and reviewed independently.
 
-Sprint 6: reviewers/architecture.py loads this file, appends the real diff
-and PR description, and sends the result to the Cursor SDK via
-sdk_bridge.py. The instructions below require a JSON response so the
-reviewer module can parse it back into a real ReviewResult
+reviewers/architecture.py loads this file, appends the real diff and PR
+description, and sends the result to the Cursor SDK directly (in-process
+as of Sprint 7; Sprint 6 originally used a subprocess bridge, since
+removed). The instructions below require a JSON response so the reviewer
+module can parse it back into a real ReviewResult
 (models/review_models.py) — see ARCHITECTURE.md section 5.
 -->
 

@@ -27,25 +27,19 @@ load_dotenv()
 # without touching orchestration code.
 REVIEW_STEP_DELAY_SECONDS = float(os.getenv("REVIEW_STEP_DELAY_SECONDS", "0.8"))
 
-# --- Cursor SDK bridge settings (Sprint 6) ---------------------------------
+# --- Cursor SDK settings ----------------------------------------------------
 #
-# cursor-sdk requires Python 3.10+; this app targets Python 3.9.6 and must
-# never import cursor_sdk directly. reviewers/architecture.py instead shells
-# out to sdk_bridge.py using a SEPARATE Python 3.10+ interpreter. See
-# DEVELOPMENT_CONTEXT.md (Sprint 5/6) for the full setup story.
+# As of Sprint 7 the project targets Python 3.12 and reviewers/architecture.py
+# imports cursor_sdk directly, in-process — there is no separate interpreter
+# or subprocess bridge (that Sprint 5/6 design was removed once the whole app
+# moved to 3.12; see DEVELOPMENT_CONTEXT.md).
 
-# Path to the Python 3.10+ interpreter that has cursor-sdk installed
-# (requirements-sdk.txt). Defaults to the conventional local venv from
-# Sprint 5; override via env var if that interpreter lives elsewhere.
-CURSOR_SDK_PYTHON = os.getenv(
-    "CURSOR_SDK_PYTHON",
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), ".venv-sdk", "bin", "python"),
-)
+# Cursor API key used to authenticate SDK calls. Read here (rather than each
+# reviewer calling os.getenv directly) to keep every setting centralized in
+# one place, per this file's own convention.
+CURSOR_API_KEY = os.getenv("CURSOR_API_KEY")
 
-# Model passed to the Cursor SDK bridge. Reuses the same env var
+# Model used for Cursor SDK-backed reviewers. Reuses the same env var
 # REVIEWBOARD_MODEL already documented in .env.example rather than
 # introducing a new one.
 CURSOR_SDK_MODEL = os.getenv("REVIEWBOARD_MODEL", "composer-2.5")
-
-# Seconds to wait for the sdk_bridge.py subprocess before giving up.
-CURSOR_SDK_BRIDGE_TIMEOUT_SECONDS = float(os.getenv("CURSOR_SDK_BRIDGE_TIMEOUT_SECONDS", "180"))

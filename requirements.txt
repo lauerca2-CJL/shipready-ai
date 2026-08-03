@@ -1,12 +1,16 @@
 # Runtime dependencies for ShipReady AI.
 #
-# Kept minimal for the scaffolding increment; version floors are set to
-# reasonably current releases as of writing and should be bumped deliberately.
+# Requires Python 3.12+ (see .python-version) — cursor-sdk requires 3.10+;
+# this project targets 3.12. Version floors below are set to reasonably
+# current releases as of writing and should be bumped deliberately.
 
 # UI framework
 streamlit>=1.38
 
-# Orchestrates the specialized reviewer agents
+# Runs the Architecture reviewer as a real Cursor agent (reviewers/architecture.py).
+# Requires Python 3.10+; see DEVELOPMENT_CONTEXT.md (Sprint 5-7) for the
+# migration history from an isolated bridge to this direct in-process import.
+cursor-sdk>=1.0.24
 
 # Structured data contracts between reviewers and the Release Manager
 pydantic>=2.7

@@ -95,9 +95,15 @@ shipready-ai/
 
 ## Getting started
 
+Requires **Python 3.12+** (`cursor-sdk` requires 3.10+; see
+[`.python-version`](./.python-version)). If your system `python3` is older,
+install 3.12 via [pyenv](https://github.com/pyenv/pyenv),
+[uv](https://github.com/astral-sh/uv) (`uv python install 3.12`), or your
+platform's package manager, then point the venv command below at it.
+
 ```bash
-# 1. Create and activate a virtual environment
-python3 -m venv .venv
+# 1. Create and activate a virtual environment (use a Python 3.12+ interpreter)
+python3.12 -m venv .venv
 source .venv/bin/activate
 
 # 2. Install dependencies

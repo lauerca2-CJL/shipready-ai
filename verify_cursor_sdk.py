@@ -3,25 +3,23 @@ Standalone Cursor SDK connectivity check.
 
 Responsibility:
     Prove, independently of the rest of the app, that this project can
-    install and configure the Cursor SDK and successfully complete one
-    trivial round-trip request. This is the ONLY thing this script does.
+    configure the Cursor SDK and successfully complete one trivial
+    round-trip request — a quick way to sanity-check credentials/network
+    without going through the Streamlit dashboard. This is the ONLY thing
+    this script does.
 
     This script is deliberately NOT imported by reviewers/, orchestrator/,
     ui/, or app.py, and does not share config.py. It is a standalone
-    smoke test you run by hand from the command line, not part of the
-    Streamlit app's runtime.
+    smoke test you run by hand from the command line.
 
-IMPORTANT — Python version note (see DEVELOPMENT_CONTEXT.md for detail):
-    The rest of this project targets Python 3.9.6. The `cursor-sdk` PyPI
-    package requires Python 3.10+, so this script cannot run under the
-    project's normal 3.9 interpreter/venv. Run it with a separate 3.10+
-    interpreter (see README section this sprint added, or the sprint
-    handoff notes in DEVELOPMENT_CONTEXT.md, for how to set one up). No
-    other file in the project has this requirement — only this script.
+    As of Sprint 7 the whole project targets Python 3.12 (see
+    .python-version / requirements.txt), so this script runs in the same
+    venv as the rest of the app — no separate interpreter needed (that was
+    a Sprint 5/6 requirement before the project migrated off Python 3.9).
 
 Usage:
     export CURSOR_API_KEY="cursor_..."   # or put it in .env (see .env.example)
-    python3.10+ verify_cursor_sdk.py
+    python verify_cursor_sdk.py
 
 Exit codes (mirrors the SDK's own failure-mode distinction):
     0 - the agent run finished successfully.
@@ -33,20 +31,10 @@ Exit codes (mirrors the SDK's own failure-mode distinction):
 import os
 import sys
 
+from cursor_sdk import Agent, AgentOptions, CursorAgentError, LocalAgentOptions
 from dotenv import load_dotenv
 
 load_dotenv()
-
-try:
-    from cursor_sdk import Agent, AgentOptions, CursorAgentError, LocalAgentOptions
-except ImportError:
-    print(
-        "cursor-sdk is not installed in this interpreter.\n"
-        "This script requires Python 3.10+ (see the module docstring) and:\n"
-        "    pip install cursor-sdk python-dotenv",
-        file=sys.stderr,
-    )
-    sys.exit(1)
 
 PROMPT = "Say hello in exactly one short sentence."
 MODEL = os.getenv("REVIEWBOARD_MODEL", "composer-2.5")
