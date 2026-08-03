@@ -137,12 +137,24 @@ def render_status_card(
     dashboard flip a card from "Pending" to "Complete" in place as the
     orchestrator finishes each step. Returns the placeholder used, so
     callers can keep it for a later update.
+
+    While Pending, `description` is the short static blurb from
+    STATUS_CARDS, rendered as a caption. Once Complete, `description` is a
+    reviewer's real `ReviewResult.summary` — for reviewers/architecture.py
+    (Sprint 8) that's a full markdown report (headings + bullets), so it's
+    rendered with st.markdown instead of st.caption. Plain one-line
+    placeholder summaries (security.py, qa.py, operations.py, cab.py) still
+    render fine as plain markdown text — this is a display-only change,
+    no reviewer/orchestrator behavior depends on it.
     """
     target = placeholder if placeholder is not None else st.empty()
     color = _STATUS_COLORS.get(status, "orange")
     with target.container(border=True):
         st.markdown(f"**{icon} {name}** · :{color}[{status}]")
-        st.caption(description)
+        if status == "Complete":
+            st.markdown(description)
+        else:
+            st.caption(description)
     return target
 
 

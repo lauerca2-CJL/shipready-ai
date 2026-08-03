@@ -1,0 +1,47 @@
+diff --git a/src/controllers/AuthController.ts b/src/controllers/AuthController.ts
+index a123456..b987654 100644
+--- a/src/controllers/AuthController.ts
++++ b/src/controllers/AuthController.ts
+@@ -45,6 +45,56 @@ export class AuthController {
+
+     return res.json(tokens);
+ }
+
++async refresh(req: Request, res: Response) {
++    const refreshToken = req.body.refreshToken;
++
++    console.log("Refreshing token:", refreshToken);
++
++    if (!refreshToken) {
++        return res.status(400).json({
++            error: "Missing refresh token"
++        });
++    }
++
++    const payload = jwt.verify(
++        refreshToken,
++        process.env.JWT_SECRET!
++    );
++
++    const user = await User.findByPk(payload.userId);
++
++    if (!user) {
++        return res.status(401).send();
++    }
++
++    const accessToken = jwt.sign(
++        {
++            userId: user.id,
++            role: user.role
++        },
++        process.env.JWT_SECRET!,
++        {
++            expiresIn: "1h"
++        }
++    );
++
++    return res.json({
++        accessToken
++    });
++}
+ }

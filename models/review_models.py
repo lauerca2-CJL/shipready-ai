@@ -42,12 +42,23 @@ class ReviewResult(BaseModel):
     """
     The structured output of one diff-reviewer (Architecture, Security, QA,
     or Operations). Consumed by the CAB reviewer and the dashboard.
+
+    `decision`/`confidence`/`recommendations`/`overall_assessment` were
+    added to support a richer, enterprise-code-review-style presentation
+    (reviewers/architecture.py, currently the only real reviewer). They're
+    optional with empty/None defaults so security.py, qa.py, operations.py,
+    and cab.py — still hardcoded placeholders — are unaffected and don't
+    need to populate them.
     """
 
     reviewer_name: str
     verdict: Literal["approve", "approve_with_comments", "block"] = "approve"
     summary: str
     findings: List[Finding] = Field(default_factory=list)
+    decision: Optional[Literal["PASS", "NEEDS_CHANGES", "BLOCK"]] = None
+    confidence: Optional[int] = Field(default=None, ge=0, le=100)
+    recommendations: List[str] = Field(default_factory=list)
+    overall_assessment: Optional[str] = None
 
 
 class ReleaseDecision(BaseModel):
