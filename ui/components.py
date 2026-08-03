@@ -87,8 +87,9 @@ def render_input_section() -> Tuple[Optional[object], Optional[object]]:
     Render the two submission inputs side by side.
 
     Returns the raw Streamlit UploadedFile objects (or None if nothing has
-    been uploaded yet) — reading/parsing their contents into a
-    SubmissionInput is out of scope for this sprint.
+    been uploaded yet). This module stays presentation-only: reading their
+    bytes and assembling a SubmissionInput is done by the caller
+    (ui/dashboard.py), per the layering in ARCHITECTURE.md.
     """
     st.subheader("Submission")
     col_diff, col_pr = st.columns(2, gap="medium")

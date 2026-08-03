@@ -10,13 +10,14 @@ Responsibility:
 
 Current flow:
     1. Configure the Streamlit page (title, icon, layout).
-    2. Render the dashboard (ui.dashboard.render_dashboard).
+    2. Render the dashboard (ui.dashboard.render_dashboard), which builds a
+       SubmissionInput (models.review_models) from the uploaded files and
+       hands it to the orchestration pipeline
+       (orchestrator.pipeline.run_review_pipeline).
 
 Planned (future sprint):
-    The dashboard will build a SubmissionInput (models.review_models) from
-    user input and hand it to the orchestration pipeline
-    (orchestrator.pipeline.run_review_pipeline). None of that is wired up
-    yet — this sprint is UI only.
+    Replace each reviewer's placeholder review() with a real Cursor SDK
+    call — not wired up yet.
 """
 
 import streamlit as st

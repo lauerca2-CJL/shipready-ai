@@ -140,9 +140,11 @@ the project — don't "fix" it by adding `__init__.py` files without reason.
 | **Sprint 1** | Re-scaffold to an exact flat structure | Replaced the nested package with the current flat layout (`reviewers/`, `models/`, `orchestrator/`, `prompts/`, `ui/`, `sample_data/`, `generated/`). Renamed "Release Manager" → "CAB" throughout. Still placeholder-only. |
 | **Sprint 2** | Build the initial Streamlit dashboard (UI only) | `ui/components.py` (reusable widgets) + `ui/dashboard.py` assembled: header, two file uploaders, "Run Review" button, 5 status cards in a responsive grid (2+2+1 layout), all hardcoded to "Pending". No business logic. Later polished for compactness (smaller header, shorter cards, tightened CSS spacing) and fixed for Python 3.9 compatibility (`typing.Optional`/`Tuple` instead of `X \| Y` / lowercase generics where relevant). |
 | **Sprint 3** | Build the orchestration workflow (still no AI) | Implemented real Pydantic models in `models/review_models.py`. Each reviewer got a real `review()` function returning a **hardcoded placeholder** `ReviewResult`/`ReleaseDecision`. `orchestrator/pipeline.py` now really runs Architecture → Security → QA → Operations → CAB in order via a generator that `yield`s after each step; the dashboard consumes this generator to flip each status card from "Pending" to "Complete" live, with a short delay between steps. That delay was then extracted into `config.py` as `REVIEW_STEP_DELAY_SECONDS` (env-var overridable, defaults to 0.8s) instead of being hardcoded in the orchestrator. |
+| **Sprint 4** | Wire real input end-to-end (still no AI) | `ui/dashboard.py` now builds a real `SubmissionInput` from the uploaded diff/PR files — new private helpers `_read_uploaded_text()` (decodes an `UploadedFile`'s bytes as UTF-8, `errors="replace"`, returns `""` for no file) and `_build_submission()` — and passes it into `run_review_pipeline(submission)` instead of relying on the empty default. `ui/components.py::render_input_section()` is unchanged (still returns raw `UploadedFile`/`None` objects; presentation-only boundary preserved). Reviewer `review()` bodies are still hardcoded placeholders — they now just receive real `diff_text`/`pr_description` instead of `""`/`""`. No `api_spec` uploader exists yet, so `SubmissionInput.api_spec` stays `None`. |
 
-Git history: `Initial project scaffold` → `Build initial Streamlit
-dashboard` → `Implement review orchestration pipeline`.
+Git history (as of Sprint 3): `Initial project scaffold` → `Build initial
+Streamlit dashboard` → `Implement review orchestration pipeline`. Sprint 4's
+changes are not yet committed — see the user before committing.
 
 ---
 
@@ -196,13 +198,14 @@ dashboard` → `Implement review orchestration pipeline`.
 - `models/review_models.py` — real Pydantic models.
 - `orchestrator/pipeline.py` — real sequencing, generator, delay-from-config logic.
 - `config.py` — real, env-var driven settings loader.
-- End-to-end click flow: **Run Review → pipeline executes in order → cards flip live → success message shows CAB's (placeholder) decision.**
+- `ui/dashboard.py::_build_submission()` / `_read_uploaded_text()` — real: uploaded diff/PR files are read and turned into a real `SubmissionInput` before the pipeline runs.
+- End-to-end click flow: **Run Review → uploaded files parsed into a real SubmissionInput → pipeline executes in order → cards flip live → success message shows CAB's (placeholder) decision.**
 
 **Explicitly placeholder / not real yet:**
-- All 5 reviewers' `review()` bodies return **hardcoded** results — no analysis of any kind happens.
+- All 5 reviewers' `review()` bodies return **hardcoded** results — no analysis of any kind happens, even though they now receive real `diff_text`/`pr_description`.
 - No Cursor SDK import or call anywhere in the codebase.
 - `prompts/*.md` are empty template placeholders — nothing loads or reads them yet.
-- Uploaded files (`ui/components.py::render_input_section()`) are captured but **discarded** — never turned into a real `SubmissionInput`. The pipeline always runs against `SubmissionInput()` (empty defaults).
+- No `api_spec` uploader exists in the UI yet — `SubmissionInput.api_spec` stays `None` from every real run (there's a `sample_api_spec.yaml` fixture for future use).
 - The four diff-reviewers run **sequentially**, not concurrently (`ARCHITECTURE.md` describes a planned concurrent fan-out via the SDK's async client — not implemented).
 - No partial-failure handling (what happens if a reviewer call fails) — not applicable yet since nothing can fail, but will matter once real SDK calls exist.
 - `Finding` objects are never populated (`ReviewResult.findings` is always `[]`).
@@ -214,7 +217,6 @@ dashboard` → `Implement review orchestration pipeline`.
 ## 7. Outstanding TODOs (grep-able as `# TODO:` in the repo)
 
 - `reviewers/*.py` — load the matching `prompts/*.md` template, invoke the Cursor SDK, parse structured response into `ReviewResult`/`ReleaseDecision`.
-- Wire `ui/components.py::render_input_section()`'s uploaded files into a real `SubmissionInput` (read file contents, pass through to `run_review_pipeline(submission)` instead of the default empty one).
 - Author real prompt content in `prompts/*.md` (currently empty HTML-comment placeholders).
 - Convert the diff-reviewer fan-out from sequential to concurrent (Cursor SDK async client), per `ARCHITECTURE.md` §2 and §5.
 - Define and implement partial-failure policy (can CAB proceed with 3/4 reviews? how are `CursorAgentError` vs. `result.status == "error"` vs. parse failures surfaced?).
@@ -226,10 +228,11 @@ dashboard` → `Implement review orchestration pipeline`.
 
 ## 8. Planned next sprint (proposed, not yet started)
 
-Two reasonable candidates, in order of what unblocks the other:
+Sprint 4 completed candidate (1) below (wiring real input end-to-end). The
+remaining candidate:
 
-1. **Wire real input end-to-end (no AI yet):** parse the uploaded diff/PR files in `ui/dashboard.py` into a real `SubmissionInput`, pass it into `run_review_pipeline(submission)` instead of the default. Still placeholder reviewer logic, but the pipeline would now be reacting to actual user input shape (e.g. could reflect file names/sizes in the placeholder summaries) — sets up the plumbing for real reviewers to have something to look at.
-2. **First real reviewer, end-to-end Cursor SDK integration** (`PRODUCT_VISION.md` Phase 3): pick one reviewer (Architecture is the natural first candidate) and wire it to make a real one-shot `Agent.prompt(...)` call using the prompt template in `prompts/architecture.md`, parsing the structured response into a real `ReviewResult`. This is the highest-value next step for proving the orchestration concept end-to-end, but depends on (1) to have something real to send.
+1. ~~Wire real input end-to-end (no AI yet)~~ — **done in Sprint 4.**
+2. **First real reviewer, end-to-end Cursor SDK integration** (`PRODUCT_VISION.md` Phase 3): pick one reviewer (Architecture is the natural first candidate) and wire it to make a real one-shot `Agent.prompt(...)` call using the prompt template in `prompts/architecture.md`, parsing the structured response into a real `ReviewResult`. This is the highest-value next step for proving the orchestration concept end-to-end, and now has real `SubmissionInput` content (from Sprint 4) to send.
 
 **Do not start Cursor SDK / LLM work without explicit user confirmation** — every prior sprint in this project has been explicitly scoped by the user one step at a time, and "no AI logic yet" has been a repeated, deliberate constraint.
 
