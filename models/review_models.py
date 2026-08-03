@@ -15,7 +15,7 @@ Planned models (not yet implemented):
     SubmissionInput
         - diff_text: str            The raw unified git diff.
         - pr_description: str       The pull request title/description.
-        - api_spec: str | None      Optional API specification, raw text.
+        - api_spec: Optional[str]   Optional API specification, raw text.
         Produced by: ui/dashboard.py (from user input).
         Consumed by: reviewers/architecture.py, security.py, qa.py,
                      operations.py.
@@ -24,7 +24,7 @@ Planned models (not yet implemented):
         - severity: Literal["info", "low", "medium", "high", "critical"]
         - title: str
         - detail: str
-        - reference: str | None     Optional file/line pointer into the diff.
+        - reference: Optional[str]  Optional file/line pointer into the diff.
 
     ReviewResult
         - reviewer_name: str

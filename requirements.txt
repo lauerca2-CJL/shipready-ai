@@ -7,7 +7,6 @@
 streamlit>=1.38
 
 # Orchestrates the specialized reviewer agents
-cursor-sdk>=0.1
 
 # Structured data contracts between reviewers and the Release Manager
 pydantic>=2.7

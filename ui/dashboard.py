@@ -2,29 +2,45 @@
 Streamlit dashboard.
 
 Responsibility:
-    Own all Streamlit rendering and input collection for ShipReady AI:
-        - Collect a SubmissionInput from the user (git diff, PR description,
-          optional API specification).
-        - Trigger the orchestration pipeline (orchestrator/pipeline.py) on
-          submission.
-        - Render each reviewer's ReviewResult (verdict, summary, findings).
-        - Render the CAB reviewer's final ReleaseDecision (decision,
-          rationale, conditions).
-        - Persist in-progress/completed pipeline state across Streamlit
-          reruns.
+    Assemble the reusable components in ui/components.py into the
+    ShipReady AI dashboard layout: header, submission inputs, the run
+    action, and the review status board.
 
-    This module must NOT call the Cursor SDK directly or construct prompts —
-    it only talks to orchestrator/pipeline.py and models/review_models.py.
+    This module (and ui/components.py) render UI only. They do not call
+    the Cursor SDK, construct prompts, build a SubmissionInput, or invoke
+    the orchestration pipeline (orchestrator/pipeline.py) — that wiring is
+    deferred to a later sprint. Today, clicking "Run Review" only shows a
+    placeholder acknowledgement.
 
-Planned signature (not yet implemented):
-    def render_dashboard() -> None: ...
-
-Do NOT implement business logic in this increment. This module currently
-only documents the dashboard's responsibility.
+Planned (future sprint):
+    - Build a SubmissionInput (models.review_models) from the uploaded
+      files once render_run_button() returns True.
+    - Hand it to orchestrator.pipeline.run_review_pipeline().
+    - Replace each status card's hardcoded "Pending" state with the real
+      ReviewResult verdict, and the CAB card with the ReleaseDecision.
+    - Persist in-progress/completed pipeline state across Streamlit reruns.
 """
 
-# TODO: import streamlit as st
-# TODO: from orchestrator.pipeline import run_review_pipeline
-# TODO: from models.review_models import SubmissionInput
-# TODO: implement render_dashboard(): input collection, pipeline trigger,
-#       and results rendering.
+import streamlit as st
+
+from ui.components import (
+    inject_compact_styles,
+    render_header,
+    render_input_section,
+    render_run_button,
+    render_status_board,
+)
+
+
+def render_dashboard() -> None:
+    """Render the full ShipReady AI dashboard."""
+    inject_compact_styles()
+    render_header()
+
+    render_input_section()
+    run_clicked = render_run_button()
+    if run_clicked:
+        # TODO: replace with a real orchestrator.pipeline.run_review_pipeline() call.
+        st.info("Review pipeline is not implemented yet — coming in a future sprint.")
+
+    render_status_board()
