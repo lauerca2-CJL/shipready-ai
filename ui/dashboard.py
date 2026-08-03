@@ -6,30 +6,38 @@ Responsibility:
     ShipReady AI dashboard layout: header, submission inputs, the run
     action, and the review status board.
 
-    This module (and ui/components.py) render UI only. They do not call
-    the Cursor SDK, construct prompts, build a SubmissionInput, or invoke
-    the orchestration pipeline (orchestrator/pipeline.py) — that wiring is
-    deferred to a later sprint. Today, clicking "Run Review" only shows a
-    placeholder acknowledgement.
+    This module renders UI and drives the orchestrator's generator, but it
+    does not itself construct prompts, call the Cursor SDK, or contain any
+    reviewer logic — that all lives in reviewers/.
+
+Sprint 3 note: clicking "Run Review" now calls
+orchestrator.pipeline.run_review_pipeline(), which runs the four
+diff-reviewers and the CAB reviewer in order and yields after each one so
+this module can flip that reviewer's status card from "Pending" to
+"Complete" in place. Every reviewer result is currently a hardcoded
+placeholder — no Cursor SDK or LLM call happens anywhere in this flow yet.
 
 Planned (future sprint):
-    - Build a SubmissionInput (models.review_models) from the uploaded
-      files once render_run_button() returns True.
-    - Hand it to orchestrator.pipeline.run_review_pipeline().
-    - Replace each status card's hardcoded "Pending" state with the real
-      ReviewResult verdict, and the CAB card with the ReleaseDecision.
-    - Persist in-progress/completed pipeline state across Streamlit reruns.
+    - Build a real SubmissionInput (models.review_models) from the
+      uploaded diff/PR files instead of the empty default used today.
+    - Replace each reviewer's placeholder review() with a real Cursor SDK
+      call.
 """
 
 import streamlit as st
 
+from orchestrator.pipeline import run_review_pipeline
 from ui.components import (
+    STATUS_CARDS,
     inject_compact_styles,
     render_header,
     render_input_section,
     render_run_button,
     render_status_board,
+    render_status_card,
 )
+
+_PENDING_STATUSES = {card["name"]: "Pending" for card in STATUS_CARDS}
 
 
 def render_dashboard() -> None:
@@ -39,8 +47,36 @@ def render_dashboard() -> None:
 
     render_input_section()
     run_clicked = render_run_button()
-    if run_clicked:
-        # TODO: replace with a real orchestrator.pipeline.run_review_pipeline() call.
-        st.info("Review pipeline is not implemented yet — coming in a future sprint.")
 
-    render_status_board()
+    if "review_statuses" not in st.session_state:
+        st.session_state.review_statuses = dict(_PENDING_STATUSES)
+
+    if run_clicked:
+        # Reset to Pending before drawing the board below, so re-running
+        # the pipeline visibly restarts the animation instead of appearing
+        # to skip straight to "Complete" for cards left over from a
+        # previous run.
+        st.session_state.review_statuses = dict(_PENDING_STATUSES)
+
+    # Render the board exactly once per script run. Its placeholders are
+    # then updated in place by the loop below, rather than re-rendering a
+    # second board — that would stack a duplicate grid on the page.
+    placeholders = render_status_board(st.session_state.review_statuses)
+
+    if run_clicked:
+        card_by_name = {card["name"]: card for card in STATUS_CARDS}
+        final_summary = ""
+
+        for name, summary in run_review_pipeline():
+            st.session_state.review_statuses[name] = "Complete"
+            card = card_by_name[name]
+            render_status_card(
+                card["icon"],
+                card["name"],
+                "Complete",
+                summary,
+                placeholder=placeholders[name],
+            )
+            final_summary = summary
+
+        st.success(f"Review complete — CAB decision: {final_summary}")
