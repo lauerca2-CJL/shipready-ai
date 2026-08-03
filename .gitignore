@@ -10,6 +10,9 @@ dist/
 .venv/
 venv/
 env/
+# Separate Python 3.10+ env for the Cursor SDK verification script
+# (cursor-sdk requires 3.10+; the rest of the project targets 3.9.6).
+.venv-sdk/
 
 # Environment / secrets
 .env

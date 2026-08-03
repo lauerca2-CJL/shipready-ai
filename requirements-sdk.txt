@@ -1,0 +1,17 @@
+# Dependencies for the standalone Cursor SDK verification script
+# (verify_cursor_sdk.py) ONLY.
+#
+# Do NOT add these to requirements.txt or requirements-dev.txt: cursor-sdk
+# requires Python 3.10+, while the rest of this project targets Python
+# 3.9.6 (see DEVELOPMENT_CONTEXT.md, "Important constraints"). Install
+# these into a separate 3.10+ virtual environment instead, e.g.:
+#
+#   python3.10 -m venv .venv-sdk
+#   .venv-sdk/bin/pip install -r requirements-sdk.txt
+#   .venv-sdk/bin/python verify_cursor_sdk.py
+#
+# See verify_cursor_sdk.py's module docstring and DEVELOPMENT_CONTEXT.md
+# (Sprint 5) for full setup instructions.
+
+cursor-sdk>=1.0.24
+python-dotenv>=1.0
